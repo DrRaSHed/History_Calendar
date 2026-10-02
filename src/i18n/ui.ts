@@ -72,6 +72,10 @@ export const ui = {
     'Drag or scroll to travel through time · click a medallion to open its story',
     'اسحب أو حرّك العجلة عشان تتنقل في الزمن · واضغط على أي ميدالية تفتح حكايتها',
   ],
+  aiVoice: [
+    'Narrating with the Egyptian AI voice — the first play of each beat may take a moment.',
+    'بيتحكي بالصوت المصري الذكي — أول مرة لكل مشهد ممكن تاخد لحظة.',
+  ],
   hintPanTouch: [
     'Swipe sideways to travel through time · tap a medallion to open its story',
     'اسحب يمين وشمال عشان تتنقل في الزمن · واضغط على أي ميدالية تفتح حكايتها',

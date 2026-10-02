@@ -1,0 +1,7 @@
+fastapi>=0.115
+uvicorn>=0.30
+# Real engine (not needed for TTS_ENGINE=stub). Install torch for your CUDA build first.
+chatterbox-tts
+torchaudio
+huggingface_hub
+safetensors

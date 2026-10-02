@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform
 import { ChevronLeft, ChevronRight, Mic, MicOff, Pause, Play, RotateCcw } from 'lucide-react';
 import { useContent, type Content } from '../i18n/content';
 import { sfx } from '../lib/sound';
+import { prefetchTts, ttsUrl, useTtsServer } from '../lib/ttsClient';
 import type { CivilizationStream, HistoricalEvent, StoryBeat } from '../types/timeline';
 import { WoodcutBadge } from './WoodcutBadge';
 
@@ -142,6 +143,9 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(!reduced);
   const [narrate, setNarrate] = useState(false);
+  const ttsServer = useTtsServer();
+  const [ttsFailed, setTtsFailed] = useState(false);
+  const serverVoice = narrate && lang === 'ar' && ttsServer && !ttsFailed;
   const progress = useMotionValue(0);
   const width = useTransform(progress, (p) => `${p * 100}%`);
   const speechOK = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -180,7 +184,7 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
 
   // Timed subtitles.
   useEffect(() => {
-    if (!playing || (narrate && speechOK)) return;
+    if (!playing || (narrate && (speechOK || serverVoice))) return;
     const duration = beatDuration(beats[index]);
     let raf = 0;
     let last = performance.now();
@@ -197,11 +201,30 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, narrate, speechOK, index, beats, progress, advance]);
+  }, [playing, narrate, speechOK, serverVoice, index, beats, progress, advance]);
+
+  // Egyptian TTS server: play the cached/generated wav for this beat; progress follows the audio.
+  useEffect(() => {
+    if (!serverVoice || !playing) return;
+    const audio = new Audio(ttsUrl(`${baseEvent.id}:${index}`));
+    audio.ontimeupdate = () => audio.duration && progress.set(Math.min(0.99, audio.currentTime / audio.duration));
+    audio.onended = () => {
+      progress.set(1);
+      advance();
+    };
+    audio.onerror = () => setTtsFailed(true); // server down / model error → browser voice takes over
+    audio.play().catch(() => setTtsFailed(true));
+    if (index + 1 < beats.length) prefetchTts(`${baseEvent.id}:${index + 1}`);
+    return () => {
+      audio.onended = audio.onerror = audio.ontimeupdate = null;
+      audio.pause();
+      audio.removeAttribute('src');
+    };
+  }, [serverVoice, playing, index, beats.length, baseEvent.id, progress, advance]);
 
   // Narrated subtitles: speak sentence by sentence; progress follows the voice.
   useEffect(() => {
-    if (!speechOK || !narrate || !playing) return;
+    if (!speechOK || !narrate || !playing || serverVoice) return;
     const synth = window.speechSynthesis;
     synth.cancel();
     const text = beats[index].narrativeChunk;
@@ -233,7 +256,7 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
       cancelled = true;
       synth.cancel();
     };
-  }, [speechOK, narrate, playing, index, beats, progress, advance, lang]);
+  }, [speechOK, narrate, playing, serverVoice, index, beats, progress, advance, lang]);
 
   useEffect(() => () => {
     if (speechOK) window.speechSynthesis.cancel();
@@ -366,9 +389,9 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
             </button>
           )}
         </div>
-        {narrate && speechOK && lang === 'ar' && (
+        {narrate && (speechOK || serverVoice) && lang === 'ar' && (
           <p className="mt-2 font-garamond text-[13px] italic text-ink-soft" role="status">
-            {hasVoice ? t('egVoice') : t('noArVoice')}
+            {serverVoice ? t('aiVoice') : hasVoice ? t('egVoice') : t('noArVoice')}
           </p>
         )}
       </div>
