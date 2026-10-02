@@ -1,0 +1,216 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vellum: #f5efe0;
+  --color-vellum-deep: #eadeca;
+  --color-parchment: #e2d3b5;
+  --color-ink: #2e2a26;
+  --color-ink-soft: #5a5048;
+  --color-sepia: #7a5c3e;
+  --color-gold: #a8863a;
+  --color-gold-soft: #c9ae6a;
+  --color-crimson: #78184a;
+  --color-turquoise: #2a7b88;
+  --color-vermilion: #b83a24;
+  --color-ochre: #c2882e;
+  --color-lapis: #1e4378;
+  --color-jade: #2b6149;
+
+  --font-display: "Cinzel", "Bodoni 72", "Playfair Display", serif;
+  --font-serif: "Lora", "Merriweather", Georgia, serif;
+  --font-garamond: "Cormorant Garamond", Garamond, "Times New Roman", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .22 0 0 0 0 .1 .28 0 0 0 -.08'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --fibres: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .05' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .32 0 0 0 0 .15 .5 0 0 0 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-vellum);
+  background-image: var(--grain), var(--fibres),
+    radial-gradient(ellipse at 50% 40%, transparent 55%, rgba(122, 92, 62, 0.16) 100%);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+::selection {
+  background: rgba(168, 134, 58, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+/* Aged sheet: vellum with grain, fibres and foxing. */
+.paper {
+  background-color: var(--color-vellum);
+  background-image: var(--grain), var(--fibres),
+    radial-gradient(circle at 18% 22%, rgba(160, 120, 60, 0.07), transparent 22%),
+    radial-gradient(circle at 76% 68%, rgba(160, 120, 60, 0.06), transparent 18%),
+    linear-gradient(180deg, #f7f2e5 0%, var(--color-vellum) 40%, var(--color-vellum-deep) 100%);
+}
+
+.paper-deep {
+  background-color: var(--color-vellum-deep);
+  background-image: var(--grain), var(--fibres);
+}
+
+/* Engraved double rule frame. */
+.engraved {
+  box-shadow:
+    inset 0 0 0 1px var(--color-ink),
+    inset 0 0 0 4px transparent,
+    inset 0 0 0 5px rgba(46, 42, 38, 0.55);
+}
+
+.rule-double {
+  border: 0;
+  border-top: 3px double var(--color-ink);
+  opacity: 0.7;
+}
+
+.smallcaps {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+}
+
+.tracking-engraved {
+  letter-spacing: 0.18em;
+}
+
+.ink-shadow {
+  text-shadow: 0 1px 0 rgba(255, 250, 235, 0.7);
+}
+
+/* Horizontal panorama scrollbar styled as a thin brass rail. */
+.panorama-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-sepia) transparent;
+  overscroll-behavior-x: contain;
+}
+.panorama-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.panorama-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-sepia);
+  border-radius: 4px;
+}
+
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(122, 92, 62, 0.6) transparent;
+}
+
+/* Range input styled as an engraved slider. */
+.engraved-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.engraved-range::-webkit-slider-runnable-track {
+  height: 3px;
+  background: var(--color-ink);
+  border-radius: 2px;
+  box-shadow: 0 2px 0 rgba(46, 42, 38, 0.18);
+}
+.engraved-range::-moz-range-track {
+  height: 3px;
+  background: var(--color-ink);
+  border-radius: 2px;
+}
+.engraved-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  border: 1.5px solid var(--color-ink);
+  box-shadow: 0 0 0 2px var(--color-vellum);
+}
+.engraved-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  border: 1.5px solid var(--color-ink);
+}
+
+.subtitle-word {
+  display: inline-block;
+  white-space: pre;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ───────── Arabic mode ───────── */
+html[lang^="ar"] {
+  --font-display: "Reem Kufi", "Cinzel", serif;
+  --font-serif: "Amiri", "Lora", Georgia, serif;
+  --font-garamond: "Amiri", "Cormorant Garamond", serif;
+  --font-mono: "Cairo", "JetBrains Mono", monospace;
+}
+
+/* Letter-spacing and case transforms break Arabic joining; italics have no Arabic equivalent. */
+html[lang^="ar"] *,
+html[lang^="ar"] *::before,
+html[lang^="ar"] *::after {
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+html[lang^="ar"] .italic,
+html[lang^="ar"] em,
+html[lang^="ar"] i,
+html[lang^="ar"] cite,
+html[lang^="ar"] svg text {
+  font-style: normal !important;
+}
+html[lang^="ar"] p,
+html[lang^="ar"] dd,
+html[lang^="ar"] li,
+html[lang^="ar"] blockquote,
+html[lang^="ar"] figcaption {
+  line-height: 1.75;
+}
+html[lang^="ar"] h1,
+html[lang^="ar"] h2,
+html[lang^="ar"] h3,
+html[lang^="ar"] h4 {
+  line-height: 1.5;
+}
+html[lang^="ar"] .smallcaps {
+  font-variant: normal;
+}
+
+/* Phone-sized in either orientation: narrow, or too short for the full desktop chrome. */
+@custom-variant compact {
+  @media (max-width: 639.98px), (max-height: 520px) {
+    @slot;
+  }
+}
+@custom-variant roomy {
+  @media (min-width: 640px) and (min-height: 521px) {
+    @slot;
+  }
+}
