@@ -21,15 +21,41 @@ const savedVoice = (): NarratorVoice => {
   }
 };
 
-export const useNarratorVoice = create<{ voice: NarratorVoice; setVoice: (v: NarratorVoice) => void }>((set) => ({
+/** Narration playback speeds (time-stretched in the browser, pitch preserved). */
+export const NARRATION_SPEEDS = [0.8, 0.9, 1] as const;
+const SPEED_KEY = 'chronosfold:speed';
+const savedSpeed = (): number => {
+  try {
+    const v = Number(localStorage.getItem(SPEED_KEY));
+    return (NARRATION_SPEEDS as readonly number[]).includes(v) ? v : 0.9;
+  } catch {
+    return 0.9;
+  }
+};
+
+const persist = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* private mode: keep it for this session only */
+  }
+};
+
+export const useNarratorVoice = create<{
+  voice: NarratorVoice;
+  speed: number;
+  setVoice: (v: NarratorVoice) => void;
+  setSpeed: (s: number) => void;
+}>((set) => ({
   voice: savedVoice(),
+  speed: savedSpeed(),
   setVoice: (voice) => {
-    try {
-      localStorage.setItem(VOICE_KEY, voice);
-    } catch {
-      /* private mode: keep it for this session only */
-    }
+    persist(VOICE_KEY, voice);
     set({ voice });
+  },
+  setSpeed: (speed) => {
+    persist(SPEED_KEY, String(speed));
+    set({ speed });
   },
 }));
 

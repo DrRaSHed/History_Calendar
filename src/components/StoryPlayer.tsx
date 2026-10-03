@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform
 import { ChevronLeft, ChevronRight, Mic, MicOff, Pause, Play, RotateCcw } from 'lucide-react';
 import { useContent, type Content } from '../i18n/content';
 import { sfx } from '../lib/sound';
-import { prefetchTts, ttsUrl, useNarratorVoice, useTts } from '../lib/ttsClient';
+import { NARRATION_SPEEDS, prefetchTts, ttsUrl, useNarratorVoice, useTts } from '../lib/ttsClient';
 import type { CivilizationStream, HistoricalEvent, StoryBeat } from '../types/timeline';
 import { WoodcutBadge } from './WoodcutBadge';
 
@@ -146,6 +146,11 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   const { mode: ttsMode, female: hasFemaleVoice } = useTts();
   const narratorVoice = useNarratorVoice((s) => s.voice);
   const setNarratorVoice = useNarratorVoice((s) => s.setVoice);
+  const speed = useNarratorVoice((s) => s.speed);
+  const setSpeed = useNarratorVoice((s) => s.setSpeed);
+  const speedRef = useRef(speed);
+  speedRef.current = speed;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const voice = hasFemaleVoice ? narratorVoice : 'v1';
   const [ttsFailed, setTtsFailed] = useState(false);
   const serverVoice = narrate && lang === 'ar' && ttsMode !== null && !ttsFailed;
@@ -211,6 +216,8 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
     if (!serverVoice || !playing) return;
     const id = `${baseEvent.id}:${index}`;
     const audio = new Audio(ttsUrl(ttsMode!, id, voice));
+    audio.defaultPlaybackRate = audio.playbackRate = speedRef.current; // default survives a src change (fallback)
+    audioRef.current = audio;
     audio.ontimeupdate = () => audio.duration && progress.set(Math.min(0.99, audio.currentTime / audio.duration));
     audio.onended = () => {
       progress.set(1);
@@ -227,10 +234,17 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
     if (index + 1 < beats.length) prefetchTts(ttsMode, `${baseEvent.id}:${index + 1}`);
     return () => {
       audio.onended = audio.onerror = audio.ontimeupdate = null;
+      if (audioRef.current === audio) audioRef.current = null;
       audio.pause();
       audio.removeAttribute('src');
     };
   }, [serverVoice, ttsMode, voice, playing, index, beats.length, baseEvent.id, progress, advance]);
+
+  // Speed changes apply to the beat already playing, without restarting it.
+  useEffect(() => {
+    const a = audioRef.current;
+    if (a) a.defaultPlaybackRate = a.playbackRate = speed;
+  }, [speed]);
 
   // Narrated subtitles: speak sentence by sentence; progress follows the voice.
   useEffect(() => {
@@ -404,24 +418,47 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
             {serverVoice ? t('aiVoice') : hasVoice ? t('egVoice') : t('noArVoice')}
           </p>
         )}
-        {serverVoice && hasFemaleVoice && (
-          <div role="radiogroup" aria-label={t('voicePick')} className="mt-2 flex items-center gap-2">
-            <span className="font-garamond text-[13px] italic text-ink-soft">{t('voicePick')}</span>
-            <div className="flex">
-              {(['v1', 'female'] as const).map((v, i) => (
-                <button
-                  key={v}
-                  type="button"
-                  role="radio"
-                  aria-checked={voice === v}
-                  onClick={() => setNarratorVoice(v)}
-                  className={`h-8 border border-ink/70 px-2.5 font-display text-[11px] font-semibold ${i > 0 ? '-ms-px' : ''} ${
-                    voice === v ? 'bg-ink text-vellum' : 'bg-vellum text-ink hover:bg-parchment'
-                  }`}
-                >
-                  {t(v === 'v1' ? 'voice1' : 'voice2')}
-                </button>
-              ))}
+        {serverVoice && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+            {hasFemaleVoice && (
+              <div role="radiogroup" aria-label={t('voicePick')} className="flex items-center gap-2">
+                <span className="font-garamond text-[13px] italic text-ink-soft">{t('voicePick')}</span>
+                <div className="flex">
+                  {(['v1', 'female'] as const).map((v, i) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="radio"
+                      aria-checked={voice === v}
+                      onClick={() => setNarratorVoice(v)}
+                      className={`h-8 border border-ink/70 px-2.5 font-display text-[11px] font-semibold ${i > 0 ? '-ms-px' : ''} ${
+                        voice === v ? 'bg-ink text-vellum' : 'bg-vellum text-ink hover:bg-parchment'
+                      }`}
+                    >
+                      {t(v === 'v1' ? 'voice1' : 'voice2')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div role="radiogroup" aria-label={t('speedPick')} className="flex items-center gap-2">
+              <span className="font-garamond text-[13px] italic text-ink-soft">{t('speedPick')}</span>
+              <div className="flex" dir="ltr">
+                {NARRATION_SPEEDS.map((s, i) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="radio"
+                    aria-checked={speed === s}
+                    onClick={() => setSpeed(s)}
+                    className={`h-8 min-w-11 border border-ink/70 px-2 font-mono text-[11px] ${i > 0 ? '-ml-px' : ''} ${
+                      speed === s ? 'bg-ink text-vellum' : 'bg-vellum text-ink hover:bg-parchment'
+                    }`}
+                  >
+                    {c.ld(s === 1 ? '1' : s.toFixed(1))}×
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

@@ -77,6 +77,7 @@ export const ui = {
     'بيتحكي بالصوت المصري الذكي.',
   ],
   voicePick: ['Narrator', 'الراوي'],
+  speedPick: ['Speed', 'السرعة'],
   voice1: ['Voice 1', 'الصوت ١'],
   voice2: ['Voice 2 · female', 'الصوت ٢ · نسائي'],
   hintPanTouch: [
