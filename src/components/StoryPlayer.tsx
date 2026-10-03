@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform
 import { ChevronLeft, ChevronRight, Mic, MicOff, Pause, Play, RotateCcw } from 'lucide-react';
 import { useContent, type Content } from '../i18n/content';
 import { sfx } from '../lib/sound';
-import { prefetchTts, ttsUrl, useTtsServer } from '../lib/ttsClient';
+import { prefetchTts, ttsUrl, useTts } from '../lib/ttsClient';
 import type { CivilizationStream, HistoricalEvent, StoryBeat } from '../types/timeline';
 import { WoodcutBadge } from './WoodcutBadge';
 
@@ -143,9 +143,9 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(!reduced);
   const [narrate, setNarrate] = useState(false);
-  const ttsServer = useTtsServer();
+  const ttsMode = useTts();
   const [ttsFailed, setTtsFailed] = useState(false);
-  const serverVoice = narrate && lang === 'ar' && ttsServer && !ttsFailed;
+  const serverVoice = narrate && lang === 'ar' && ttsMode !== null && !ttsFailed;
   const progress = useMotionValue(0);
   const width = useTransform(progress, (p) => `${p * 100}%`);
   const speechOK = typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -206,7 +206,7 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   // Egyptian TTS server: play the cached/generated wav for this beat; progress follows the audio.
   useEffect(() => {
     if (!serverVoice || !playing) return;
-    const audio = new Audio(ttsUrl(`${baseEvent.id}:${index}`));
+    const audio = new Audio(ttsUrl(ttsMode!, `${baseEvent.id}:${index}`));
     audio.ontimeupdate = () => audio.duration && progress.set(Math.min(0.99, audio.currentTime / audio.duration));
     audio.onended = () => {
       progress.set(1);
@@ -214,13 +214,13 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
     };
     audio.onerror = () => setTtsFailed(true); // server down / model error → browser voice takes over
     audio.play().catch(() => setTtsFailed(true));
-    if (index + 1 < beats.length) prefetchTts(`${baseEvent.id}:${index + 1}`);
+    if (index + 1 < beats.length) prefetchTts(ttsMode, `${baseEvent.id}:${index + 1}`);
     return () => {
       audio.onended = audio.onerror = audio.ontimeupdate = null;
       audio.pause();
       audio.removeAttribute('src');
     };
-  }, [serverVoice, playing, index, beats.length, baseEvent.id, progress, advance]);
+  }, [serverVoice, ttsMode, playing, index, beats.length, baseEvent.id, progress, advance]);
 
   // Narrated subtitles: speak sentence by sentence; progress follows the voice.
   useEffect(() => {

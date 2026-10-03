@@ -9,3 +9,10 @@ Reads the saved Arabic narration (`texts.json`, ids like `mansa-musa:0`) with `N
 
 Env: `TTS_ENGINE=stub` (tone, no model), `TTS_DEVICE`, `TTS_REFERENCE_WAV` (voice/style prompt), `TTS_MODEL_REV`.
 API: `GET /api/tts/{id}` (wav, Range), `GET .../status`, `POST .../prefetch`, `GET /api/tts/health`.
+
+## Static narration (what the deployed site uses)
+
+    .venv/Scripts/python generate_static.py   # all story beats -> public/audio/<event>-<beat>.mp3 (resumable)
+
+The player probes `/audio/gobekli-tepe-0.mp3` first, then this API, then falls back to browser voices.
+Downloads ~3.2 GB once (base Chatterbox vocoder/voice + NAMAA's Egyptian T3). On CPU ≈ 1.5–2.5 min per beat.

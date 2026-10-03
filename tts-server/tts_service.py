@@ -16,6 +16,35 @@ from pathlib import Path
 HERE = Path(__file__).parent
 MODEL_ID = "NAMAA-Space/NAMAA-Egyptian-TTS"
 MODEL_REV = os.getenv("TTS_MODEL_REV", "main")
+BASE_ID = "ResembleAI/chatterbox"
+
+
+def _fetch(repo: str, name: str, revision: str = "main", attempts: int = 8) -> str:
+    """hf_hub_download with retries; a partial download resumes on the next attempt."""
+    from huggingface_hub import hf_hub_download
+
+    for i in range(attempts):
+        try:
+            return hf_hub_download(repo_id=repo, filename=name, revision=revision)
+        except Exception as e:
+            if i == attempts - 1:
+                raise
+            print(f"download {repo}/{name} failed ({type(e).__name__}); retrying", flush=True)
+            time.sleep(min(60, 5 * 2**i))
+    raise RuntimeError("unreachable")
+
+
+def _place(src: str, dst: Path) -> None:
+    """Hard-link a cached file into the checkpoint dir (no extra disk use); copy if linking isn't possible."""
+    src = os.path.realpath(src)  # the HF cache entry may itself be a (relative) symlink into blobs/
+    if dst.exists() or dst.is_symlink():
+        dst.unlink()
+    try:
+        os.link(src, dst)
+    except OSError:
+        import shutil
+
+        shutil.copyfile(src, dst)
 
 
 class TextStore:
@@ -67,22 +96,30 @@ class ChatterboxEngine:
     def load(self) -> None:
         import torch
         from chatterbox import mtl_tts
-        from huggingface_hub import snapshot_download
-        from safetensors.torch import load_file
 
         device = os.getenv("TTS_DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
-        ckpt = snapshot_download(repo_id=MODEL_ID, repo_type="model", revision=MODEL_REV)
-        model = mtl_tts.ChatterboxMultilingualTTS.from_pretrained(device=device)
-        model.t3.load_state_dict(load_file(f"{ckpt}/t3_mtl23ls_v2.safetensors", device=device))
-        model.t3.to(device).eval()
+        model = mtl_tts.ChatterboxMultilingualTTS.from_local(self._assemble_checkpoint(), device)
         self.model, self.sample_rate = model, model.sr
+
+    @staticmethod
+    def _assemble_checkpoint() -> Path:
+        """Same result as the model card (base Chatterbox multilingual with NAMAA's Egyptian T3 weights swapped in),
+        but downloads only the files actually loaded: ~3.2 GB instead of ~8.6 GB for both full repos."""
+        ckpt = HERE / "ckpt"
+        ckpt.mkdir(exist_ok=True)
+        for name in ("ve.pt", "s3gen.pt", "grapheme_mtl_merged_expanded_v1.json", "Cangjie5_TC.json", "conds.pt"):
+            _place(_fetch(BASE_ID, name), ckpt / name)
+        _place(_fetch(MODEL_ID, "t3_mtl23ls_v2.safetensors", MODEL_REV), ckpt / "t3_mtl23ls_v2.safetensors")
+        if os.getenv("TTS_VOICE") == "namaa":  # try the conds.pt shipped in NAMAA's repo instead of the base default voice
+            _place(_fetch(MODEL_ID, "conds.pt", MODEL_REV), ckpt / "conds.pt")
+        return ckpt
 
     def synthesize(self, text: str, out: Path) -> None:
         import torchaudio as ta
 
         kwargs = {"audio_prompt_path": self.prompt} if self.prompt else {}
         wav = self.model.generate(text, language_id="ar", **kwargs)
-        ta.save(str(out), wav, self.sample_rate)
+        ta.save(str(out), wav, self.sample_rate, encoding="PCM_S", bits_per_sample=16)
 
 
 def make_engine():
