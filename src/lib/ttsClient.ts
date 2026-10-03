@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { create } from 'zustand';
 
 /**
  * Egyptian-Arabic narration source, probed once:
@@ -8,32 +9,66 @@ import { useEffect, useState } from 'react';
  */
 export type TtsMode = 'static' | 'server' | null;
 
-const staticName = (textId: string) => `/audio/${textId.replace(':', '-')}.mp3`;
-export const ttsUrl = (mode: Exclude<TtsMode, null>, textId: string) =>
-  mode === 'static' ? staticName(textId) : `/api/tts/${encodeURIComponent(textId)}`;
+/** Pre-generated narrators: 'v1' = the model's built-in voice (public/audio), 'female' = public/audio/female. */
+export type NarratorVoice = 'v1' | 'female';
+
+const VOICE_KEY = 'chronosfold:voice';
+const savedVoice = (): NarratorVoice => {
+  try {
+    return localStorage.getItem(VOICE_KEY) === 'female' ? 'female' : 'v1';
+  } catch {
+    return 'v1';
+  }
+};
+
+export const useNarratorVoice = create<{ voice: NarratorVoice; setVoice: (v: NarratorVoice) => void }>((set) => ({
+  voice: savedVoice(),
+  setVoice: (voice) => {
+    try {
+      localStorage.setItem(VOICE_KEY, voice);
+    } catch {
+      /* private mode: keep it for this session only */
+    }
+    set({ voice });
+  },
+}));
+
+const staticName = (textId: string, voice: NarratorVoice = 'v1') =>
+  `/audio/${voice === 'female' ? 'female/' : ''}${textId.replace(':', '-')}.mp3`;
+export const ttsUrl = (mode: Exclude<TtsMode, null>, textId: string, voice: NarratorVoice = 'v1') =>
+  mode === 'static' ? staticName(textId, voice) : `/api/tts/${encodeURIComponent(textId)}`;
 export const prefetchTts = (mode: TtsMode, textId: string) => {
   if (mode === 'server') void fetch(`${ttsUrl('server', textId)}/prefetch`, { method: 'POST' }).catch(() => {});
 };
 
-let probe: Promise<TtsMode> | null = null;
-const probeMode = () =>
+const isAudio = (r: Response) => r.ok && (r.headers.get('content-type') ?? '').startsWith('audio');
+
+let probe: Promise<{ mode: TtsMode; female: boolean }> | null = null;
+const probeTts = () =>
   (probe ??= fetch(staticName('gobekli-tepe:0'), { method: 'HEAD' })
-    .then((r) => (r.ok && (r.headers.get('content-type') ?? '').startsWith('audio') ? ('static' as const) : Promise.reject()))
+    .then(async (r) => {
+      if (!isAudio(r)) throw new Error('no static audio');
+      const female = await fetch(staticName('gobekli-tepe:0', 'female'), { method: 'HEAD' })
+        .then(isAudio)
+        .catch(() => false);
+      return { mode: 'static' as const, female };
+    })
     .catch(() =>
       fetch('/api/tts/health')
         .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('json') ? r.json() : null))
-        .then((j): TtsMode => (j?.ok === true ? 'server' : null)),
+        .then((j) => ({ mode: (j?.ok === true ? 'server' : null) as TtsMode, female: false })),
     )
-    .catch((): TtsMode => null));
+    .catch(() => ({ mode: null as TtsMode, female: false })));
 
-export function useTts(): TtsMode {
-  const [mode, setMode] = useState<TtsMode>(null);
+/** Which narration source is available, and whether the second (female) narrator ships with it. */
+export function useTts(): { mode: TtsMode; female: boolean } {
+  const [state, setState] = useState<{ mode: TtsMode; female: boolean }>({ mode: null, female: false });
   useEffect(() => {
     let live = true;
-    probeMode().then((m) => live && setMode(m));
+    probeTts().then((s) => live && setState(s));
     return () => {
       live = false;
     };
   }, []);
-  return mode;
+  return state;
 }

@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform
 import { ChevronLeft, ChevronRight, Mic, MicOff, Pause, Play, RotateCcw } from 'lucide-react';
 import { useContent, type Content } from '../i18n/content';
 import { sfx } from '../lib/sound';
-import { prefetchTts, ttsUrl, useTts } from '../lib/ttsClient';
+import { prefetchTts, ttsUrl, useNarratorVoice, useTts } from '../lib/ttsClient';
 import type { CivilizationStream, HistoricalEvent, StoryBeat } from '../types/timeline';
 import { WoodcutBadge } from './WoodcutBadge';
 
@@ -143,7 +143,10 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(!reduced);
   const [narrate, setNarrate] = useState(false);
-  const ttsMode = useTts();
+  const { mode: ttsMode, female: hasFemaleVoice } = useTts();
+  const narratorVoice = useNarratorVoice((s) => s.voice);
+  const setNarratorVoice = useNarratorVoice((s) => s.setVoice);
+  const voice = hasFemaleVoice ? narratorVoice : 'v1';
   const [ttsFailed, setTtsFailed] = useState(false);
   const serverVoice = narrate && lang === 'ar' && ttsMode !== null && !ttsFailed;
   const progress = useMotionValue(0);
@@ -206,21 +209,28 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   // Egyptian TTS server: play the cached/generated wav for this beat; progress follows the audio.
   useEffect(() => {
     if (!serverVoice || !playing) return;
-    const audio = new Audio(ttsUrl(ttsMode!, `${baseEvent.id}:${index}`));
+    const id = `${baseEvent.id}:${index}`;
+    const audio = new Audio(ttsUrl(ttsMode!, id, voice));
     audio.ontimeupdate = () => audio.duration && progress.set(Math.min(0.99, audio.currentTime / audio.duration));
     audio.onended = () => {
       progress.set(1);
       advance();
     };
-    audio.onerror = () => setTtsFailed(true); // server down / model error → browser voice takes over
-    audio.play().catch(() => setTtsFailed(true));
+    const fail = () => setTtsFailed(true); // server down / model error → browser voice takes over
+    audio.onerror = () => {
+      if (voice === 'female' && ttsMode === 'static' && !audio.src.endsWith(ttsUrl('static', id))) {
+        audio.src = ttsUrl('static', id); // second narrator missing this beat → first narrator
+        audio.play().catch((e: DOMException) => e.name === 'NotAllowedError' && fail());
+      } else fail();
+    };
+    audio.play().catch((e: DOMException) => e.name === 'NotAllowedError' && fail());
     if (index + 1 < beats.length) prefetchTts(ttsMode, `${baseEvent.id}:${index + 1}`);
     return () => {
       audio.onended = audio.onerror = audio.ontimeupdate = null;
       audio.pause();
       audio.removeAttribute('src');
     };
-  }, [serverVoice, ttsMode, playing, index, beats.length, baseEvent.id, progress, advance]);
+  }, [serverVoice, ttsMode, voice, playing, index, beats.length, baseEvent.id, progress, advance]);
 
   // Narrated subtitles: speak sentence by sentence; progress follows the voice.
   useEffect(() => {
@@ -393,6 +403,27 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
           <p className="mt-2 font-garamond text-[13px] italic text-ink-soft" role="status">
             {serverVoice ? t('aiVoice') : hasVoice ? t('egVoice') : t('noArVoice')}
           </p>
+        )}
+        {serverVoice && hasFemaleVoice && (
+          <div role="radiogroup" aria-label={t('voicePick')} className="mt-2 flex items-center gap-2">
+            <span className="font-garamond text-[13px] italic text-ink-soft">{t('voicePick')}</span>
+            <div className="flex">
+              {(['v1', 'female'] as const).map((v, i) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={voice === v}
+                  onClick={() => setNarratorVoice(v)}
+                  className={`h-8 border border-ink/70 px-2.5 font-display text-[11px] font-semibold ${i > 0 ? '-ms-px' : ''} ${
+                    voice === v ? 'bg-ink text-vellum' : 'bg-vellum text-ink hover:bg-parchment'
+                  }`}
+                >
+                  {t(v === 'v1' ? 'voice1' : 'voice2')}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </section>

@@ -13,7 +13,7 @@ An interactive chart of world history inspired by Sebastian C. Adams' 1871 *Sync
   - synopsis, perspectives & historical consensus, key figures and artifacts, sources,
   - an infographic tab: locator map, headline numbers, comparison chart (with table view), timeline and facts.
 - **Arabic (RTL)** — full Arabic interface; story narration written in Egyptian colloquial, scholarly sections in Modern Standard Arabic. The time axis stays left-to-right by design.
-- **Egyptian-Arabic voice** — the 80 Arabic story beats ship as pre-generated MP3s made with [NAMAA-Space/NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS); falls back to the browser's speech voices.
+- **Egyptian-Arabic voice** — the 80 Arabic story beats ship as pre-generated MP3s made with [NAMAA-Space/NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS), in two narrator voices the listener can switch between (the model's built-in voice, and a female Egyptian voice); falls back to the browser's speech voices.
 - Keyboard navigation (press `?` in the app), optional paper/ambient sound, reduced-motion support, responsive down to small phones in either orientation.
 
 ## Tech stack
@@ -48,7 +48,7 @@ src/
   i18n/            language store, UI strings, content localization
   lib/             time scale, ribbon geometry, sound, TTS client
   store/           app state (zustand)
-public/audio/      pre-generated Egyptian narration, <event>-<beat>.mp3
+public/audio/      pre-generated Egyptian narration, <event>-<beat>.mp3 (voice 1); female/ = voice 2
 scripts/           export-ar-texts.ts — dumps Arabic narration to tts-server/texts.json
 tts-server/        optional TTS service and batch generator (see its README)
 ```
@@ -66,7 +66,8 @@ python -m venv .venv
 .venv/Scripts/pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
 .venv/Scripts/pip install chatterbox-tts lameenc huggingface_hub
 # delete the MP3s you want re-recorded, then:
-.venv/Scripts/python generate_static.py                  # resumable; only missing files are generated
+.venv/Scripts/python generate_static.py                  # voice 1; resumable, only missing files are generated
+.venv/Scripts/python generate_static.py --voice voices/namaa_female.wav --out female   # voice 2
 ```
 
 First run downloads ~3.2 GB of model files. On CPU expect roughly 1.5–2.5 minutes per beat. (Paths above are for Windows; on macOS/Linux use `.venv/bin/`.)
@@ -83,6 +84,7 @@ A live FastAPI service with hash-keyed caching is also included for development 
 ## Credits
 
 - Sebastian C. Adams, *Adams' Synchronological Chart or Map of History* (1871) — the visual inspiration.
+- Female narrator reference voice: from the [NAMAA demo Space](https://huggingface.co/spaces/omarelshehy/NAMAA-Egyptian-Voice) (MIT).
 - Egyptian TTS: [NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS) by the NAMAA Community (MIT), built on [Resemble AI Chatterbox](https://huggingface.co/ResembleAI/chatterbox).
 - Fonts: Cinzel, Cormorant Garamond, Lora, JetBrains Mono, Amiri, Cairo and Reem Kufi via Google Fonts.
 

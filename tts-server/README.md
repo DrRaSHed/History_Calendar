@@ -12,7 +12,9 @@ API: `GET /api/tts/{id}` (wav, Range), `GET .../status`, `POST .../prefetch`, `G
 
 ## Static narration (what the deployed site uses)
 
-    .venv/Scripts/python generate_static.py   # all story beats -> public/audio/<event>-<beat>.mp3 (resumable)
+    .venv/Scripts/python generate_static.py   # voice 1: all story beats -> public/audio/<event>-<beat>.mp3 (resumable)
+    .venv/Scripts/python generate_static.py --voice voices/namaa_female.wav --out female   # voice 2 -> public/audio/female/
 
 The player probes `/audio/gobekli-tepe-0.mp3` first, then this API, then falls back to browser voices.
+If `/audio/female/gobekli-tepe-0.mp3` exists, a narrator switch appears; a missing female clip falls back to voice 1.
 Downloads ~3.2 GB once (base Chatterbox vocoder/voice + NAMAA's Egyptian T3). On CPU ≈ 1.5–2.5 min per beat.
