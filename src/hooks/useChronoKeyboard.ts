@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
-import { eventById, timelineEvents } from '../data/timelineData';
+import { useEffect, useState } from 'react';
+import { civilizations, eventById, timelineEvents } from '../data/timelineData';
+import { ribbonWidthAt } from '../lib/ribbonGeometry';
 import { setAmbientRegion, setSoundEnabled, sfx } from '../lib/sound';
 import { yearToU } from '../lib/timeScale';
 import { useChronoStore } from '../store/useChronoStore';
@@ -114,11 +115,41 @@ export function useChronoKeyboard() {
   }, []);
 }
 
+/** The region the panorama is looking at: the event nearest the centre of the view, else the widest stream there. */
+function regionInView(view: { start: number; end: number }): string | null {
+  const center = (view.start + view.end) / 2;
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const e of timelineEvents) {
+    const u = yearToU(e.year);
+    if (u < view.start || u > view.end) continue;
+    const d = Math.abs(u - center);
+    if (d < bestD) [bestD, best] = [d, e.civilizationId];
+  }
+  if (best) return best;
+  let widest = 0;
+  for (const c of civilizations) {
+    const w = ribbonWidthAt(c.id, center);
+    if (w > widest) [widest, best] = [w, c.id];
+  }
+  return best;
+}
+
 /** Keeps the Web Audio engine in step with the sound toggle and the region being explored. */
 export function useSoundSync() {
   const soundOn = useChronoStore((s) => s.soundOn);
-  // "Going into a region": an open story (its stream's region), otherwise a stream focused in the legend.
-  const region = useChronoStore((s) => (s.activeEventId ? eventById[s.activeEventId]?.civilizationId : s.focusCivId) ?? null);
+  // Region priority: an open story, then a stream focused in the legend, then whatever the panorama is panned to.
+  const region = useChronoStore((s) => {
+    if (s.activeEventId) return eventById[s.activeEventId]?.civilizationId ?? null;
+    if (s.focusCivId) return s.focusCivId;
+    return s.mode === 'panorama' ? regionInView(s.view) : null;
+  });
+  // Let a pan settle before cross-fading, so sweeping across the chart doesn't flicker between regions.
+  const [settled, setSettled] = useState(region);
+  useEffect(() => {
+    const id = setTimeout(() => setSettled(region), 700);
+    return () => clearTimeout(id);
+  }, [region]);
 
   useEffect(() => {
     setSoundEnabled(soundOn);
@@ -126,6 +157,6 @@ export function useSoundSync() {
   }, [soundOn]);
 
   useEffect(() => {
-    setAmbientRegion(soundOn ? region : null);
-  }, [soundOn, region]);
+    setAmbientRegion(soundOn ? settled : null);
+  }, [soundOn, settled]);
 }

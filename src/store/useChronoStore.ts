@@ -31,6 +31,8 @@ interface ChronoState {
   soundOn: boolean;
   legendOpen: boolean;
   helpOpen: boolean;
+  /** Thread of prophets (Jewish & Islamic tradition) across the Levant & Arabia lane. */
+  showProphets: boolean;
 
   setMode: (mode: ViewMode) => void;
   setZoom: (zoom: number, anchor?: number) => void;
@@ -44,6 +46,7 @@ interface ChronoState {
   toggleSound: () => void;
   toggleLegend: () => void;
   setHelpOpen: (open: boolean) => void;
+  toggleProphets: () => void;
 }
 
 let navSeq = 0;
@@ -61,6 +64,7 @@ export const useChronoStore = create<ChronoState>((set) => ({
   soundOn: false,
   legendOpen: true,
   helpOpen: false,
+  showProphets: true,
 
   setMode: (mode) => set({ mode }),
   setZoom: (zoom, anchor = 0.5) =>
@@ -77,4 +81,5 @@ export const useChronoStore = create<ChronoState>((set) => ({
   toggleSound: () => set((s) => ({ soundOn: !s.soundOn })),
   toggleLegend: () => set((s) => ({ legendOpen: !s.legendOpen })),
   setHelpOpen: (open) => set({ helpOpen: open }),
+  toggleProphets: () => set((s) => ({ showProphets: !s.showProphets })),
 }));

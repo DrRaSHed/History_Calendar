@@ -8,13 +8,14 @@ An interactive chart of world history inspired by Sebastian C. Adams' 1871 *Sync
 
 - **Four-fold view** — the chart folds into four leaves (Deep Past & River Valleys · Classical & Axial Age · Interchange & Revolutions · Global Acceleration); tap a leaf to unfold at that era.
 - **Panorama** — horizontally pannable chart with millennia / epoch / century zoom, minimap and stream legend.
+- **Prophets line** — a thread through the Levant & Arabia lane marking 37 prophets of Jewish and Islamic tradition (Adam to Muhammad), colour-coded by which tradition counts each as a prophet, with traditional dates and notes on hover/tap; toggle it from the stream legend.
 - **20 events** with cartoon vignettes in the spirit of Adams' engravings, each opening a story reader:
   - subtitle-style story beats (auto or click-to-advance) with narration,
   - synopsis, perspectives & historical consensus, key figures and artifacts, sources,
   - an infographic tab: locator map, headline numbers, comparison chart (with table view), timeline and facts.
 - **Arabic (RTL)** — full Arabic interface; story narration written in Egyptian colloquial, scholarly sections in Modern Standard Arabic. The time axis stays left-to-right by design.
 - **Egyptian-Arabic voice** — the 80 Arabic story beats ship as pre-generated MP3s made with [NAMAA-Space/NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS), in two narrator voices (the model's built-in voice, and a female Egyptian voice), plus a third voice ("Aisha", Egyptian Arabic) made with [Speaktor](https://speaktor.com). Listeners switch narrator and speed (0.8×–1×) in the story player; falls back to the browser's speech voices.
-- Keyboard navigation (press `?` in the app), optional sound — paper effects plus a soft, synthesised soundscape of each region's signature instruments (ney & oud, lyre, santur, tanpura, guzheng, kora, clay flute, chant & lute) that plays only while you're in that region's story or stream, reduced-motion support, responsive down to small phones in either orientation.
+- Keyboard navigation (press `?` in the app), optional sound — paper effects plus a soft, synthesised soundscape of each region's signature instruments (ney & oud, lyre, santur, tanpura, guzheng, kora, clay flute, chant & lute) that follows the region you're exploring — the open story, a focused stream, or, while panning, the event nearest the centre of the view (silent in the folded overview), reduced-motion support, responsive down to small phones in either orientation.
 
 ## Tech stack
 
@@ -80,6 +81,7 @@ A live FastAPI service with hash-keyed caching is also included for development 
 - The Arabic copy (including the Egyptian-dialect narration) needs proofreading by a native speaker.
 - The TTS model card notes that numbers and the Egyptian “ق” may be mispronounced.
 - Ribbon widths are an interpretive, Adams-style convention for relative prominence, not measured data.
+- The prophets line uses traditional dating (Jewish Anno Mundi reckoning before the monarchy, the Qurʾanic narrative order where no date is given, conventional estimates from David on); most of these dates cannot be verified historically.
 
 ## Credits
 

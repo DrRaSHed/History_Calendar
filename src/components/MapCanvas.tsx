@@ -4,6 +4,7 @@ import { CREASES_U, uToYear, yearToU } from '../lib/timeScale';
 import type { Importance } from '../types/timeline';
 import { CivilizationRibbons, RibbonTooltip, type MarkerFootprint } from './CivilizationRibbons';
 import { EventMarker } from './EventMarker';
+import { ProphetsMarkers, ProphetsThread } from './ProphetsLine';
 import { AxisOverlay, AxisUnderlay } from './TimeAxis';
 
 export type MapVariant = 'panorama' | 'leaf';
@@ -68,9 +69,11 @@ export const MapCanvas = memo(function MapCanvas({ totalWidth: W, height: H, var
           interactive={interactive}
           markers={footprints}
         />
+        <ProphetsThread totalWidth={W} top={top} height={areaH} dots={!interactive} />
         <AxisOverlay totalWidth={W} height={H} top={top} bottom={bottom} variant={variant} />
       </svg>
       {interactive && <RibbonTooltip />}
+      {interactive && <ProphetsMarkers totalWidth={W} top={top} height={areaH} />}
       {markers.map((m) => (
         <EventMarker
           key={m.event.id}

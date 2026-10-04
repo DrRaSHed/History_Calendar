@@ -51,6 +51,13 @@ export const ui = {
   // legend, markers, ribbons
   streams: ['Streams', 'الأنهار'],
   legendAria: ['Civilization streams — select to highlight', 'أنهار الحضارات — اختر نهرًا لإبرازه'],
+  prophetsLegend: ['Prophets', 'الأنبياء'],
+  prophetsLegendTitle: ['Prophets in Jewish & Islamic tradition — show / hide', 'الأنبياء في التقليدين اليهودي والإسلامي — إظهار / إخفاء'],
+  prophetsAria: ['Prophets in Jewish and Islamic tradition', 'الأنبياء في التقليدين اليهودي والإسلامي'],
+  tradBoth: ['A prophet in both Jewish and Islamic tradition', 'نبي في التقليدين اليهودي والإسلامي'],
+  tradJewish: ['A prophet in Jewish tradition', 'نبي في التقليد اليهودي'],
+  tradIslam: ['A prophet in Islamic tradition', 'نبي في التقليد الإسلامي'],
+  prophetsCaveat: ['Traditional, approximate dates — most cannot be verified historically.', 'تواريخ تقليدية تقريبية، ومعظمها لا يمكن التحقق منه تاريخيًا.'],
   imp_monumental: ['Monumental', 'محوري'],
   imp_major: ['Major', 'كبير'],
   imp_regional: ['Regional', 'إقليمي'],
