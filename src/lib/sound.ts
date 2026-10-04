@@ -1,13 +1,12 @@
 /**
- * Tiny Web Audio sound kit — synthesised paper rustles, page flicks, a soft chime and an
- * optional ambient drone whose root note shifts with each fold panel. No audio files.
+ * Tiny Web Audio sound kit — synthesised paper rustles, page flicks, a soft chime, and the regional
+ * soundscapes in ./soundscapes. No audio files.
  */
+import { duckScape, isRegion, setRegionScape } from './soundscapes';
+
 let ctx: AudioContext | null = null;
 let enabled = false;
 let noise: AudioBuffer | null = null;
-let ambient: { oscs: OscillatorNode[]; gain: GainNode; filter: BiquadFilterNode } | null = null;
-
-const PANEL_ROOTS = [98, 110, 130.81, 146.83]; // G2, A2, C3, D3
 
 function audio(): AudioContext | null {
   if (typeof window === 'undefined' || !('AudioContext' in window)) return null;
@@ -54,7 +53,7 @@ function burst(opts: { duration: number; freq: number; q: number; gain: number; 
 export function setSoundEnabled(on: boolean) {
   enabled = on;
   if (on) audio();
-  if (!on) stopAmbient();
+  if (!on && ctx) setRegionScape(ctx, null);
 }
 
 export const sfx = {
@@ -84,45 +83,11 @@ export const sfx = {
   },
 };
 
-export function startAmbient(panel: number) {
-  const c = audio();
-  if (!c || !enabled || ambient) return;
-  const gain = c.createGain();
-  gain.gain.value = 0;
-  const filter = c.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 520;
-  const root = PANEL_ROOTS[panel] ?? 110;
-  const oscs = [1, 1.5, 2.003].map((ratio, i) => {
-    const o = c.createOscillator();
-    o.type = i === 0 ? 'triangle' : 'sine';
-    o.frequency.value = root * ratio;
-    o.detune.value = (i - 1) * 6;
-    o.connect(filter);
-    o.start();
-    return o;
-  });
-  filter.connect(gain).connect(c.destination);
-  gain.gain.linearRampToValueAtTime(0.035, c.currentTime + 2.5);
-  ambient = { oscs, gain, filter };
+/** Background: the soundscape of the region the listener has gone into (story open / stream focused), else silence. */
+export function setAmbientRegion(region: string | null) {
+  const target = enabled && isRegion(region) ? region : null;
+  if (!target && !ctx) return; // nothing playing and nothing to start
+  setRegionScape(audio(), target);
 }
 
-export function setAmbientPanel(panel: number) {
-  const c = audio();
-  if (!c || !ambient) return;
-  const root = PANEL_ROOTS[panel] ?? 110;
-  [1, 1.5, 2.003].forEach((ratio, i) => {
-    ambient!.oscs[i].frequency.setTargetAtTime(root * ratio, c.currentTime, 0.8);
-  });
-}
-
-export function stopAmbient() {
-  if (!ambient || !ctx) return;
-  const { oscs, gain } = ambient;
-  const t = ctx.currentTime;
-  gain.gain.cancelScheduledValues(t);
-  gain.gain.setValueAtTime(gain.gain.value, t);
-  gain.gain.linearRampToValueAtTime(0, t + 0.8);
-  oscs.forEach((o) => o.stop(t + 0.9));
-  ambient = null;
-}
+export { duckScape as duckAmbient };

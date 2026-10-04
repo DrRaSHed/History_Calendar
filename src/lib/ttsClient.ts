@@ -18,13 +18,16 @@ export type NarratorVoice = 'v1' | 'female' | 'aisha';
 export const NARRATOR_VOICES: readonly NarratorVoice[] = ['v1', 'female', 'aisha'];
 const VOICE_DIR: Record<NarratorVoice, string> = { v1: '', female: 'female/', aisha: 'aisha/' };
 
+/** Narrator used until the listener picks one (falls back to 'v1' if its clips aren't deployed). */
+const DEFAULT_VOICE: NarratorVoice = 'aisha';
+
 const VOICE_KEY = 'chronosfold:voice';
 const savedVoice = (): NarratorVoice => {
   try {
     const v = localStorage.getItem(VOICE_KEY) as NarratorVoice | null;
-    return v && NARRATOR_VOICES.includes(v) ? v : 'v1';
+    return v && NARRATOR_VOICES.includes(v) ? v : DEFAULT_VOICE;
   } catch {
-    return 'v1';
+    return DEFAULT_VOICE;
   }
 };
 

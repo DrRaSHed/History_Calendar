@@ -28,7 +28,7 @@ export const ui = {
   zoomValue: ['{v} panels per screen width', '{v} لوحة في عرض الشاشة'],
   legendToggle: ['Stream legend (L)', 'دليل الأنهار (L)'],
   legendToggleSr: ['Toggle stream legend', 'إظهار/إخفاء دليل الأنهار'],
-  soundTitle: ['Paper & ambient sound (M)', 'أصوات الورق والأجواء (M)'],
+  soundTitle: ['Paper sounds & regional soundscapes (M)', 'أصوات الورق وأجواء كل منطقة (M)'],
   soundOnSr: ['Mute sound', 'كتم الصوت'],
   soundOffSr: ['Enable sound', 'تشغيل الصوت'],
   helpTitle: ['About & keyboard shortcuts (?)', 'عن الخريطة واختصارات لوحة المفاتيح (?)'],

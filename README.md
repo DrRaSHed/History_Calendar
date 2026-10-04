@@ -14,7 +14,7 @@ An interactive chart of world history inspired by Sebastian C. Adams' 1871 *Sync
   - an infographic tab: locator map, headline numbers, comparison chart (with table view), timeline and facts.
 - **Arabic (RTL)** — full Arabic interface; story narration written in Egyptian colloquial, scholarly sections in Modern Standard Arabic. The time axis stays left-to-right by design.
 - **Egyptian-Arabic voice** — the 80 Arabic story beats ship as pre-generated MP3s made with [NAMAA-Space/NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS), in two narrator voices (the model's built-in voice, and a female Egyptian voice), plus a third voice ("Aisha", Egyptian Arabic) made with [Speaktor](https://speaktor.com). Listeners switch narrator and speed (0.8×–1×) in the story player; falls back to the browser's speech voices.
-- Keyboard navigation (press `?` in the app), optional paper/ambient sound, reduced-motion support, responsive down to small phones in either orientation.
+- Keyboard navigation (press `?` in the app), optional sound — paper effects plus a soft, synthesised soundscape of each region's signature instruments (ney & oud, lyre, santur, tanpura, guzheng, kora, clay flute, chant & lute) that plays only while you're in that region's story or stream, reduced-motion support, responsive down to small phones in either orientation.
 
 ## Tech stack
 

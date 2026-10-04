@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { timelineEvents } from '../data/timelineData';
-import { setAmbientPanel, setSoundEnabled, sfx, startAmbient } from '../lib/sound';
-import { panelIndexAt, yearToU } from '../lib/timeScale';
+import { eventById, timelineEvents } from '../data/timelineData';
+import { setAmbientRegion, setSoundEnabled, sfx } from '../lib/sound';
+import { yearToU } from '../lib/timeScale';
 import { useChronoStore } from '../store/useChronoStore';
 
 function focusEvent(direction: 1 | -1) {
@@ -114,20 +114,18 @@ export function useChronoKeyboard() {
   }, []);
 }
 
-/** Keeps the Web Audio engine in step with the sound toggle and the panel in view. */
+/** Keeps the Web Audio engine in step with the sound toggle and the region being explored. */
 export function useSoundSync() {
   const soundOn = useChronoStore((s) => s.soundOn);
-  const panel = useChronoStore((s) => panelIndexAt((s.view.start + s.view.end) / 2));
+  // "Going into a region": an open story (its stream's region), otherwise a stream focused in the legend.
+  const region = useChronoStore((s) => (s.activeEventId ? eventById[s.activeEventId]?.civilizationId : s.focusCivId) ?? null);
 
   useEffect(() => {
     setSoundEnabled(soundOn);
-    if (soundOn) {
-      startAmbient(panelIndexAt((useChronoStore.getState().view.start + useChronoStore.getState().view.end) / 2));
-      sfx.flick();
-    }
+    if (soundOn) sfx.flick();
   }, [soundOn]);
 
   useEffect(() => {
-    setAmbientPanel(panel);
-  }, [panel]);
+    setAmbientRegion(soundOn ? region : null);
+  }, [soundOn, region]);
 }

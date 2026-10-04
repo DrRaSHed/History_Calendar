@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Mic, MicOff, Pause, Play, RotateCcw } from 'lucide-react';
 import { useContent, type Content } from '../i18n/content';
-import { sfx } from '../lib/sound';
+import { duckAmbient, sfx } from '../lib/sound';
 import { NARRATION_SPEEDS, prefetchTts, ttsUrl, useNarratorVoice, useTts, type NarratorVoice } from '../lib/ttsClient';
 import type { UiKey } from '../i18n/ui';
 
@@ -288,6 +288,12 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   useEffect(() => () => {
     if (speechOK) window.speechSynthesis.cancel();
   }, [speechOK]);
+
+  // Keep the regional soundscape under the narrator's voice.
+  useEffect(() => {
+    duckAmbient(narrate && playing);
+    return () => duckAmbient(false);
+  }, [narrate, playing]);
 
   // Beat navigation keys (Shift+arrows are reserved for switching events).
   useEffect(() => {
