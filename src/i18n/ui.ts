@@ -80,6 +80,7 @@ export const ui = {
   speedPick: ['Speed', 'السرعة'],
   voice1: ['Voice 1', 'الصوت ١'],
   voice2: ['Voice 2 · female', 'الصوت ٢ · نسائي'],
+  voice3: ['Voice 3 · Aisha', 'الصوت ٣ · عائشة'],
   hintPanTouch: [
     'Swipe sideways to travel through time · tap a medallion to open its story',
     'اسحب يمين وشمال عشان تتنقل في الزمن · واضغط على أي ميدالية تفتح حكايتها',

@@ -9,13 +9,20 @@ import { create } from 'zustand';
  */
 export type TtsMode = 'static' | 'server' | null;
 
-/** Pre-generated narrators: 'v1' = the model's built-in voice (public/audio), 'female' = public/audio/female. */
-export type NarratorVoice = 'v1' | 'female';
+/**
+ * Pre-generated narrators, each a folder under public/audio:
+ *  'v1' = NAMAA model's built-in voice (public/audio), 'female' = NAMAA + female reference voice,
+ *  'aisha' = Speaktor's Egyptian "Aisha" voice.
+ */
+export type NarratorVoice = 'v1' | 'female' | 'aisha';
+export const NARRATOR_VOICES: readonly NarratorVoice[] = ['v1', 'female', 'aisha'];
+const VOICE_DIR: Record<NarratorVoice, string> = { v1: '', female: 'female/', aisha: 'aisha/' };
 
 const VOICE_KEY = 'chronosfold:voice';
 const savedVoice = (): NarratorVoice => {
   try {
-    return localStorage.getItem(VOICE_KEY) === 'female' ? 'female' : 'v1';
+    const v = localStorage.getItem(VOICE_KEY) as NarratorVoice | null;
+    return v && NARRATOR_VOICES.includes(v) ? v : 'v1';
   } catch {
     return 'v1';
   }
@@ -60,7 +67,7 @@ export const useNarratorVoice = create<{
 }));
 
 const staticName = (textId: string, voice: NarratorVoice = 'v1') =>
-  `/audio/${voice === 'female' ? 'female/' : ''}${textId.replace(':', '-')}.mp3`;
+  `/audio/${VOICE_DIR[voice]}${textId.replace(':', '-')}.mp3`;
 export const ttsUrl = (mode: Exclude<TtsMode, null>, textId: string, voice: NarratorVoice = 'v1') =>
   mode === 'static' ? staticName(textId, voice) : `/api/tts/${encodeURIComponent(textId)}`;
 export const prefetchTts = (mode: TtsMode, textId: string) => {
@@ -69,26 +76,34 @@ export const prefetchTts = (mode: TtsMode, textId: string) => {
 
 const isAudio = (r: Response) => r.ok && (r.headers.get('content-type') ?? '').startsWith('audio');
 
-let probe: Promise<{ mode: TtsMode; female: boolean }> | null = null;
+type TtsState = { mode: TtsMode; voices: NarratorVoice[] };
+const ONLY_V1: NarratorVoice[] = ['v1'];
+
+let probe: Promise<TtsState> | null = null;
 const probeTts = () =>
   (probe ??= fetch(staticName('gobekli-tepe:0'), { method: 'HEAD' })
     .then(async (r) => {
       if (!isAudio(r)) throw new Error('no static audio');
-      const female = await fetch(staticName('gobekli-tepe:0', 'female'), { method: 'HEAD' })
-        .then(isAudio)
-        .catch(() => false);
-      return { mode: 'static' as const, female };
+      const extra = await Promise.all(
+        NARRATOR_VOICES.filter((v) => v !== 'v1').map((v) =>
+          fetch(staticName('gobekli-tepe:0', v), { method: 'HEAD' })
+            .then((res): NarratorVoice | null => (isAudio(res) ? v : null))
+            .catch((): NarratorVoice | null => null),
+        ),
+      );
+      const voices: NarratorVoice[] = ['v1', ...extra.filter((v): v is NarratorVoice => v !== null)];
+      return { mode: 'static' as const, voices };
     })
     .catch(() =>
       fetch('/api/tts/health')
         .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('json') ? r.json() : null))
-        .then((j) => ({ mode: (j?.ok === true ? 'server' : null) as TtsMode, female: false })),
+        .then((j): TtsState => ({ mode: j?.ok === true ? 'server' : null, voices: ONLY_V1 })),
     )
-    .catch(() => ({ mode: null as TtsMode, female: false })));
+    .catch((): TtsState => ({ mode: null, voices: ONLY_V1 })));
 
-/** Which narration source is available, and whether the second (female) narrator ships with it. */
-export function useTts(): { mode: TtsMode; female: boolean } {
-  const [state, setState] = useState<{ mode: TtsMode; female: boolean }>({ mode: null, female: false });
+/** Which narration source is available, and which pre-generated narrators ship with it. */
+export function useTts(): TtsState {
+  const [state, setState] = useState<TtsState>({ mode: null, voices: ONLY_V1 });
   useEffect(() => {
     let live = true;
     probeTts().then((s) => live && setState(s));

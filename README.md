@@ -13,7 +13,7 @@ An interactive chart of world history inspired by Sebastian C. Adams' 1871 *Sync
   - synopsis, perspectives & historical consensus, key figures and artifacts, sources,
   - an infographic tab: locator map, headline numbers, comparison chart (with table view), timeline and facts.
 - **Arabic (RTL)** — full Arabic interface; story narration written in Egyptian colloquial, scholarly sections in Modern Standard Arabic. The time axis stays left-to-right by design.
-- **Egyptian-Arabic voice** — the 80 Arabic story beats ship as pre-generated MP3s made with [NAMAA-Space/NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS), in two narrator voices the listener can switch between (the model's built-in voice, and a female Egyptian voice); falls back to the browser's speech voices.
+- **Egyptian-Arabic voice** — the 80 Arabic story beats ship as pre-generated MP3s made with [NAMAA-Space/NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS), in two narrator voices (the model's built-in voice, and a female Egyptian voice), plus a third voice ("Aisha", Egyptian Arabic) made with [Speaktor](https://speaktor.com). Listeners switch narrator and speed (0.8×–1×) in the story player; falls back to the browser's speech voices.
 - Keyboard navigation (press `?` in the app), optional paper/ambient sound, reduced-motion support, responsive down to small phones in either orientation.
 
 ## Tech stack
@@ -48,7 +48,7 @@ src/
   i18n/            language store, UI strings, content localization
   lib/             time scale, ribbon geometry, sound, TTS client
   store/           app state (zustand)
-public/audio/      pre-generated Egyptian narration, <event>-<beat>.mp3 (voice 1); female/ = voice 2
+public/audio/      pre-generated Egyptian narration, <event>-<beat>.mp3 (voice 1); female/ = voice 2; aisha/ = voice 3 (Speaktor)
 scripts/           export-ar-texts.ts — dumps Arabic narration to tts-server/texts.json
 tts-server/        optional TTS service and batch generator (see its README)
 ```
@@ -84,6 +84,7 @@ A live FastAPI service with hash-keyed caching is also included for development 
 ## Credits
 
 - Sebastian C. Adams, *Adams' Synchronological Chart or Map of History* (1871) — the visual inspiration.
+- Voice 3 ("Aisha", Arabic – Egypt) generated with [Speaktor](https://speaktor.com) text-to-speech.
 - Female narrator reference voice: from the [NAMAA demo Space](https://huggingface.co/spaces/omarelshehy/NAMAA-Egyptian-Voice) (MIT).
 - Egyptian TTS: [NAMAA-Egyptian-TTS](https://huggingface.co/NAMAA-Space/NAMAA-Egyptian-TTS) by the NAMAA Community (MIT), built on [Resemble AI Chatterbox](https://huggingface.co/ResembleAI/chatterbox).
 - Fonts: Cinzel, Cormorant Garamond, Lora, JetBrains Mono, Amiri, Cairo and Reem Kufi via Google Fonts.

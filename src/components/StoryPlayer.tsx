@@ -3,7 +3,10 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform
 import { ChevronLeft, ChevronRight, Mic, MicOff, Pause, Play, RotateCcw } from 'lucide-react';
 import { useContent, type Content } from '../i18n/content';
 import { sfx } from '../lib/sound';
-import { NARRATION_SPEEDS, prefetchTts, ttsUrl, useNarratorVoice, useTts } from '../lib/ttsClient';
+import { NARRATION_SPEEDS, prefetchTts, ttsUrl, useNarratorVoice, useTts, type NarratorVoice } from '../lib/ttsClient';
+import type { UiKey } from '../i18n/ui';
+
+const VOICE_LABEL: Record<NarratorVoice, UiKey> = { v1: 'voice1', female: 'voice2', aisha: 'voice3' };
 import type { CivilizationStream, HistoricalEvent, StoryBeat } from '../types/timeline';
 import { WoodcutBadge } from './WoodcutBadge';
 
@@ -143,7 +146,7 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(!reduced);
   const [narrate, setNarrate] = useState(false);
-  const { mode: ttsMode, female: hasFemaleVoice } = useTts();
+  const { mode: ttsMode, voices: availableVoices } = useTts();
   const narratorVoice = useNarratorVoice((s) => s.voice);
   const setNarratorVoice = useNarratorVoice((s) => s.setVoice);
   const speed = useNarratorVoice((s) => s.speed);
@@ -151,7 +154,7 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
   const speedRef = useRef(speed);
   speedRef.current = speed;
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const voice = hasFemaleVoice ? narratorVoice : 'v1';
+  const voice = availableVoices.includes(narratorVoice) ? narratorVoice : 'v1';
   const [ttsFailed, setTtsFailed] = useState(false);
   const serverVoice = narrate && lang === 'ar' && ttsMode !== null && !ttsFailed;
   const progress = useMotionValue(0);
@@ -225,8 +228,8 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
     };
     const fail = () => setTtsFailed(true); // server down / model error → browser voice takes over
     audio.onerror = () => {
-      if (voice === 'female' && ttsMode === 'static' && !audio.src.endsWith(ttsUrl('static', id))) {
-        audio.src = ttsUrl('static', id); // second narrator missing this beat → first narrator
+      if (voice !== 'v1' && ttsMode === 'static' && !audio.src.endsWith(ttsUrl('static', id))) {
+        audio.src = ttsUrl('static', id); // chosen narrator missing this beat → first narrator
         audio.play().catch((e: DOMException) => e.name === 'NotAllowedError' && fail());
       } else fail();
     };
@@ -420,11 +423,11 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
         )}
         {serverVoice && (
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-            {hasFemaleVoice && (
-              <div role="radiogroup" aria-label={t('voicePick')} className="flex items-center gap-2">
+            {availableVoices.length > 1 && (
+              <div role="radiogroup" aria-label={t('voicePick')} className="flex flex-wrap items-center gap-2">
                 <span className="font-garamond text-[13px] italic text-ink-soft">{t('voicePick')}</span>
                 <div className="flex">
-                  {(['v1', 'female'] as const).map((v, i) => (
+                  {availableVoices.map((v, i) => (
                     <button
                       key={v}
                       type="button"
@@ -435,7 +438,7 @@ export function StoryPlayer({ event: baseEvent, civ: baseCiv }: StoryPlayerProps
                         voice === v ? 'bg-ink text-vellum' : 'bg-vellum text-ink hover:bg-parchment'
                       }`}
                     >
-                      {t(v === 'v1' ? 'voice1' : 'voice2')}
+                      {t(VOICE_LABEL[v])}
                     </button>
                   ))}
                 </div>
